@@ -1,0 +1,181 @@
+# Xynes Telemetry Service
+
+A telemetry service for ingesting generic events from all apps (UI, backend, performance, user behaviour) via a simple action-based API.
+
+## Features
+
+- **Event Ingestion**: Generic event collection from multiple sources (web, mobile, backend, CLI)
+- **Action-Based API**: Simple, consistent action pattern for all operations
+- **Extensible Schema**: JSONB metadata field for arbitrary event properties
+- **Context-Aware**: Workspace and user scoping for multi-tenant support
+
+## Tech Stack
+
+- **Runtime**: [Bun](https://bun.sh/)
+- **Framework**: [Hono](https://hono.dev/)
+- **Database**: PostgreSQL with [Drizzle ORM](https://orm.drizzle.team/)
+- **Validation**: [Zod](https://zod.dev/)
+- **Testing**: [Vitest](https://vitest.dev/)
+
+## Project Structure
+
+```
+src/
+├── actions/          # Action handlers and registry
+│   ├── handlers/     # Individual action implementations
+│   ├── schemas/      # Zod validation schemas
+│   ├── registry.ts   # Action registration and execution
+│   └── types.ts      # Type definitions
+├── db/               # Database layer
+│   ├── schema/       # Drizzle schema definitions
+│   ├── migrations/   # SQL migrations
+│   └── client.ts     # Database client
+├── repositories/     # Data access layer
+├── routes/           # HTTP route definitions
+├── middleware/       # Request/response middleware
+├── errors/           # Custom error classes
+├── config/           # Environment configuration
+├── app.ts            # Hono app setup
+└── index.ts          # Entry point
+```
+
+## Getting Started
+
+### Prerequisites
+
+- [Bun](https://bun.sh/) v1.0+
+- PostgreSQL database with SSH tunnel (see [infrastructure docs](../infra/SSH_TUNNEL_SUPABASE_DB.md))
+
+### Installation
+
+```bash
+# Install dependencies
+bun install
+
+# Copy environment file
+cp .env.example .env
+
+# Edit .env with your database URL
+```
+
+### Configuration
+
+Create a `.env` file with the following variables:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/database"
+PORT=3000
+NODE_ENV=development
+```
+
+### Database Setup
+
+```bash
+# Generate migrations (after schema changes)
+bun run db:generate
+
+# Apply migrations to database
+bun run db:migrate
+
+# Open Drizzle Studio (database browser)
+bun run db:studio
+```
+
+### Running the Service
+
+```bash
+# Development mode
+bun run dev
+
+# Production mode
+bun run start
+```
+
+### Testing
+
+```bash
+# Run all tests
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Run tests with coverage
+bun run test:coverage
+```
+
+## API Reference
+
+### Health Check
+
+```http
+GET /health
+```
+
+**Response**
+```json
+{
+  "status": "ok"
+}
+```
+
+### Telemetry Actions
+
+```http
+POST /internal/telemetry-actions
+Content-Type: application/json
+X-Workspace-Id: <workspace-uuid>  (optional)
+X-XS-User-Id: <user-uuid>         (optional)
+```
+
+#### telemetry.event.ingest
+
+Ingest a telemetry event.
+
+**Request Body**
+```json
+{
+  "actionKey": "telemetry.event.ingest",
+  "payload": {
+    "source": "web",
+    "eventType": "ui.interaction",
+    "name": "button.clicked",
+    "targetType": "button",
+    "targetId": "submit-form",
+    "metadata": {
+      "buttonId": "submit-btn",
+      "page": "/checkout"
+    }
+  }
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+## Event Schema
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| source | string | Yes | Event source (web, mobile, backend, cli, extension) |
+| eventType | string | Yes | Event category (ui.interaction, perf.metric, error, custom) |
+| name | string | Yes | Specific event name (e.g., editor.block.added) |
+| targetType | string | No | Target entity type (doc, cms.entry, crm.lead) |
+| targetId | string | No | Target entity identifier |
+| metadata | object | No | Arbitrary key-value data |
+
+## Architecture
+
+See [ADR-001: Telemetry Service Design](./docs/adr/001-telemetry-service.md) for architectural decisions.
+
+## License
+
+Proprietary - Xynes
