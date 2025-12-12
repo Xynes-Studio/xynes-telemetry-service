@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { loggerMiddleware, setupErrorHandler } from './middleware';
-import { healthRoute, telemetryActionsRoute } from './routes';
+import { healthRoute, readyRoute, telemetryActionsRoute } from './routes';
 import { registerAllActions } from './actions';
 
 // Register all action handlers
@@ -16,6 +16,7 @@ setupErrorHandler(app);
 
 // Mount routes
 app.route('/', healthRoute);
+app.route('/', readyRoute);
 app.route('/', telemetryActionsRoute);
 
 export { app };
