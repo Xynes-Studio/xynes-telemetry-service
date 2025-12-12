@@ -28,10 +28,11 @@ describe('Error Handler (setupErrorHandler)', () => {
     
     expect(res.status).toBe(400);
     
-    const body = await res.json() as { error: string; message: string; details: unknown };
-    expect(body.error).toBe('ValidationError');
-    expect(body.message).toContain('Validation failed');
-    expect(body.details).toBeDefined();
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toContain('Validation failed');
+    expect(body.error.details).toBeDefined();
   });
 
   it('should return 400 for UnknownActionError', async () => {
@@ -43,10 +44,10 @@ describe('Error Handler (setupErrorHandler)', () => {
     
     expect(res.status).toBe(400);
     
-    const body = await res.json() as { error: string; message: string; actionKey: string };
-    expect(body.error).toBe('UnknownActionError');
-    expect(body.message).toContain('test.action');
-    expect(body.actionKey).toBe('test.action');
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('UNKNOWN_ACTION');
+    expect(body.error.message).toContain('test.action');
   });
 
   it('should return 500 for generic Error', async () => {
@@ -61,9 +62,10 @@ describe('Error Handler (setupErrorHandler)', () => {
     
     expect(res.status).toBe(500);
     
-    const body = await res.json() as { error: string; message: string };
-    expect(body.error).toBe('InternalServerError');
-    expect(body.message).toBe('Something went wrong');
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('INTERNAL_ERROR');
+    expect(body.error.message).toBe('Something went wrong');
 
     consoleSpy.mockRestore();
   });

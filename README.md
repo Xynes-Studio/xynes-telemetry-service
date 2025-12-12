@@ -60,7 +60,16 @@ cp .env.example .env
 
 ### Configuration
 
-Create a `.env` file with the following variables:
+Provide env vars directly, or use one of the repo env files:
+- `.env.localhost`: running on host with SSH tunnel
+- `.env.dev`: running in Docker with `db.local` host mapping
+
+The service scripts default to `.env.dev`. Override with:
+```bash
+XYNES_ENV_FILE=.env.localhost bun run test
+```
+
+Environment variables:
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/database"
@@ -115,7 +124,21 @@ GET /health
 **Response**
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "service": "xynes-telemetry-service"
+}
+```
+
+### Readiness Check
+
+```http
+GET /ready
+```
+
+**Response**
+```json
+{
+  "status": "ready"
 }
 ```
 

@@ -60,8 +60,8 @@ describe('Telemetry Actions Endpoint', () => {
 
         expect(res.status).toBe(201);
         
-        const body = await res.json() as { success: boolean; data: { id: string; createdAt: string } };
-        expect(body.success).toBe(true);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
         expect(body.data).toHaveProperty('id');
         expect(body.data).toHaveProperty('createdAt');
       });
@@ -84,8 +84,8 @@ describe('Telemetry Actions Endpoint', () => {
 
         expect(res.status).toBe(201);
         
-        const body = await res.json() as { success: boolean };
-        expect(body.success).toBe(true);
+        const body = await res.json() as any;
+        expect(body.ok).toBe(true);
       });
 
       it('should work without workspace and user headers', async () => {
@@ -126,8 +126,9 @@ describe('Telemetry Actions Endpoint', () => {
 
         expect(res.status).toBe(400);
         
-        const body = await res.json() as { error: string };
-        expect(body.error).toBe('ValidationError');
+        const body = await res.json() as any;
+        expect(body.ok).toBe(false);
+        expect(body.error.code).toBe('VALIDATION_ERROR');
       });
 
       it('should return 400 for empty source', async () => {
@@ -148,8 +149,9 @@ describe('Telemetry Actions Endpoint', () => {
 
         expect(res.status).toBe(400);
         
-        const body = await res.json() as { error: string };
-        expect(body.error).toBe('ValidationError');
+        const body = await res.json() as any;
+        expect(body.ok).toBe(false);
+        expect(body.error.code).toBe('VALIDATION_ERROR');
       });
 
       it('should return 400 for invalid actionKey', async () => {
@@ -166,8 +168,9 @@ describe('Telemetry Actions Endpoint', () => {
 
         expect(res.status).toBe(400);
         
-        const body = await res.json() as { error: string };
-        expect(body.error).toBe('ValidationError');
+        const body = await res.json() as any;
+        expect(body.ok).toBe(false);
+        expect(body.error.code).toBe('VALIDATION_ERROR');
       });
 
       it('should return 400 for missing actionKey', async () => {
