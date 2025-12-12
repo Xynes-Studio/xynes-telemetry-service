@@ -54,7 +54,7 @@ describe('Action Registry', () => {
   describe('executeTelemetryAction', () => {
     it('should execute registered action with payload and context', async () => {
       const mockPayload = { source: 'web', eventType: 'test', name: 'test.event' };
-      const mockContext: TelemetryActionContext = { workspaceId: 'ws-123', userId: 'user-456' };
+      const mockContext: TelemetryActionContext = { workspaceId: 'ws-123', userId: 'user-456', requestId: 'test-req-id' };
       const expectedResult = { id: 'event-789', createdAt: new Date() };
       
       const mockHandler: TelemetryActionHandler<typeof mockPayload, typeof expectedResult> = async (payload, ctx) => {
@@ -71,13 +71,13 @@ describe('Action Registry', () => {
 
     it('should throw UnknownActionError for unregistered action', async () => {
       await expect(
-        executeTelemetryAction('telemetry.event.ingest', {}, {})
+        executeTelemetryAction('telemetry.event.ingest', {}, { requestId: 'test-req-id' })
       ).rejects.toThrow(UnknownActionError);
     });
 
     it('should include action key in UnknownActionError', async () => {
       try {
-        await executeTelemetryAction('telemetry.event.ingest', {}, {});
+        await executeTelemetryAction('telemetry.event.ingest', {}, { requestId: 'test-req-id' });
         expect.fail('Should have thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(UnknownActionError);

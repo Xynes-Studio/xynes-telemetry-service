@@ -38,6 +38,7 @@ describe('Event Ingest Handler', () => {
       };
       
       const ctx: TelemetryActionContext = {
+        requestId: 'test-req-id',
         workspaceId: 'ws-123',
         userId: 'user-456',
       };
@@ -71,7 +72,7 @@ describe('Event Ingest Handler', () => {
         name: 'response.time',
       };
       
-      const ctx: TelemetryActionContext = {};
+      const ctx: TelemetryActionContext = { requestId: 'test-req-id' };
       
       const result = await handler(payload, ctx);
       
@@ -101,7 +102,7 @@ describe('Event Ingest Handler', () => {
         metadata: null,
       };
       
-      await handler(payload, {});
+      await handler(payload, { requestId: 'test-req-id' });
       
       expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({
         targetType: null,
@@ -121,7 +122,7 @@ describe('Event Ingest Handler', () => {
         name: 'test.event',
       };
       
-      await expect(handler(payload, {})).rejects.toThrow(ValidationError);
+      await expect(handler(payload, { requestId: 'test-req-id' })).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for missing eventType', async () => {
@@ -133,7 +134,7 @@ describe('Event Ingest Handler', () => {
         name: 'test.event',
       };
       
-      await expect(handler(payload, {})).rejects.toThrow(ValidationError);
+      await expect(handler(payload, { requestId: 'test-req-id' })).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for missing name', async () => {
@@ -145,7 +146,7 @@ describe('Event Ingest Handler', () => {
         eventType: 'test',
       };
       
-      await expect(handler(payload, {})).rejects.toThrow(ValidationError);
+      await expect(handler(payload, { requestId: 'test-req-id' })).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for empty source', async () => {
@@ -158,7 +159,7 @@ describe('Event Ingest Handler', () => {
         name: 'test.event',
       };
       
-      await expect(handler(payload, {})).rejects.toThrow(ValidationError);
+      await expect(handler(payload, { requestId: 'test-req-id' })).rejects.toThrow(ValidationError);
     });
 
     it('should include field path in validation error message', async () => {
@@ -166,7 +167,7 @@ describe('Event Ingest Handler', () => {
       const handler = createEventIngestHandler(mockRepo);
       
       try {
-        await handler({}, {});
+        await handler({}, { requestId: 'test-req-id' });
         expect.fail('Should have thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
@@ -181,7 +182,7 @@ describe('Event Ingest Handler', () => {
       const handler = createEventIngestHandler(mockRepo);
       
       const payload = { source: 'web', eventType: 'test', name: 'event' };
-      const ctx: TelemetryActionContext = { workspaceId: 'workspace-id-123' };
+      const ctx: TelemetryActionContext = { workspaceId: 'workspace-id-123', requestId: 'test-req-id' };
       
       await handler(payload, ctx);
       
@@ -195,7 +196,7 @@ describe('Event Ingest Handler', () => {
       const handler = createEventIngestHandler(mockRepo);
       
       const payload = { source: 'web', eventType: 'test', name: 'event' };
-      const ctx: TelemetryActionContext = { userId: 'user-id-789' };
+      const ctx: TelemetryActionContext = { userId: 'user-id-789', requestId: 'test-req-id' };
       
       await handler(payload, ctx);
       
@@ -210,7 +211,7 @@ describe('Event Ingest Handler', () => {
       
       const payload = { source: 'web', eventType: 'test', name: 'event' };
       
-      await handler(payload, {});
+      await handler(payload, { requestId: 'test-req-id' });
       
       expect(mockRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({ workspaceId: undefined, userId: undefined })
