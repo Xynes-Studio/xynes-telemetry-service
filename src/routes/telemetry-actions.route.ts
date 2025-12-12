@@ -11,7 +11,16 @@ const actionRequestSchema = z.object({
   payload: z.unknown(),
 });
 
+/**
+ * Generates a unique request ID for correlation.
+ */
+function generateRequestId(): string {
+  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
+  const requestId = generateRequestId();
+
   // Parse request body
   const body = await c.req.json();
 
@@ -30,6 +39,7 @@ telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
   const ctx: TelemetryActionContext = {
     workspaceId: c.req.header('X-Workspace-Id') || undefined,
     userId: c.req.header('X-XS-User-Id') || undefined,
+    requestId,
   };
 
   // Execute action
@@ -39,7 +49,8 @@ telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
     ctx
   );
 
-  return c.json({ success: true, data: result }, 201);
+  return c.json({ ok: true, data: result, meta: { requestId } }, 201);
 });
 
 export { telemetryActionsRoute };
+
