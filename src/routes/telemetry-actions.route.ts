@@ -3,8 +3,10 @@ import { z } from 'zod';
 import { executeTelemetryAction, type TelemetryActionKey, type TelemetryActionContext } from '../actions';
 import { ValidationError } from '../errors';
 import { ZodError } from 'zod';
+import { internalServiceAuthMiddleware } from '../middleware/internal-service-auth.middleware';
 
 const telemetryActionsRoute = new Hono();
+telemetryActionsRoute.use('/internal/*', internalServiceAuthMiddleware);
 
 const actionRequestSchema = z.object({
   actionKey: z.enum(['telemetry.event.ingest'] as const),
@@ -53,4 +55,3 @@ telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
 });
 
 export { telemetryActionsRoute };
-

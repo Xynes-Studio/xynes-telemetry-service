@@ -75,6 +75,7 @@ Environment variables:
 DATABASE_URL="postgresql://user:password@localhost:5432/database"
 PORT=3000
 NODE_ENV=development
+INTERNAL_SERVICE_TOKEN=change-me-to-a-long-random-secret
 ```
 
 ### Database Setup
