@@ -17,6 +17,24 @@ describe('utils/url', () => {
       );
     });
 
+    it('strips query/hash from protocol-relative URLs', () => {
+      expect(stripQueryFromUrlLikeString('//example.com/a/b?token=secret#frag')).toBe(
+        'https://example.com/a/b'
+      );
+    });
+
+    it('strips query/hash from other network schemes (ws/wss/ftp)', () => {
+      expect(stripQueryFromUrlLikeString('ws://example.com/socket?token=secret')).toBe(
+        'ws://example.com/socket'
+      );
+      expect(stripQueryFromUrlLikeString('wss://example.com/socket?token=secret')).toBe(
+        'wss://example.com/socket'
+      );
+      expect(stripQueryFromUrlLikeString('ftp://example.com/file?token=secret')).toBe(
+        'ftp://example.com/file'
+      );
+    });
+
     it('leaves non-URL strings untouched', () => {
       expect(stripQueryFromUrlLikeString('token=secret')).toBe('token=secret');
       expect(stripQueryFromUrlLikeString('not-a-url?token=secret')).toBe('not-a-url?token=secret');

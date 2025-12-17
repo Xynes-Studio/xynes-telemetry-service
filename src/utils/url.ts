@@ -5,13 +5,18 @@
  */
 
 export function stripQueryFromUrlLikeString(value: string): string {
-  if (value.startsWith('/')) {
+  // Root-relative path (but not protocol-relative URLs like "//example.com/...").
+  if (value.startsWith('/') && !value.startsWith('//')) {
     return stripQueryAndHash(value);
   }
 
-  if (value.startsWith('http://') || value.startsWith('https://')) {
+  // Protocol-relative URL: "//example.com/path?token=..." -> "https://example.com/path"
+  const normalized = value.startsWith('//') ? `https:${value}` : value;
+
+  // Network URLs with an explicit scheme (http(s), ws(s), ftp, etc.).
+  if (/^\w+:\/\//.test(normalized)) {
     try {
-      const url = new URL(value);
+      const url = new URL(normalized);
       return `${url.origin}${url.pathname}`;
     } catch {
       return stripQueryAndHash(value);
