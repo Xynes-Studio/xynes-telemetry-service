@@ -4,6 +4,7 @@ import * as eventsRepository from '../../src/repositories/events.repository';
 import { clearRegistry, registerTelemetryAction } from '../../src/actions/registry';
 import { createEventIngestHandler } from '../../src/actions/handlers/event-ingest.handler';
 import type { Event } from '../../src/db/schema';
+import { INTERNAL_SERVICE_TOKEN } from '../support/internal-auth';
 
 describe('Telemetry Actions Endpoint', () => {
   const mockEvent: Event = {
@@ -42,6 +43,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
             'X-Workspace-Id': 'ws-123',
             'X-XS-User-Id': 'user-456',
           },
@@ -71,6 +73,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             actionKey: 'telemetry.event.ingest',
@@ -93,6 +96,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             actionKey: 'telemetry.event.ingest',
@@ -114,6 +118,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             actionKey: 'telemetry.event.ingest',
@@ -136,6 +141,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             actionKey: 'telemetry.event.ingest',
@@ -159,6 +165,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             actionKey: 'invalid.action',
@@ -178,6 +185,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             payload: { source: 'web', eventType: 'test', name: 'test' },
@@ -194,6 +202,7 @@ describe('Telemetry Actions Endpoint', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Internal-Service-Token': INTERNAL_SERVICE_TOKEN,
           },
           body: JSON.stringify({
             actionKey: 'unknown.action.key',
@@ -204,5 +213,50 @@ describe('Telemetry Actions Endpoint', () => {
         expect(res.status).toBe(400);
       });
     });
+  });
+
+  it('should return 401 when X-Internal-Service-Token is missing', async () => {
+    const res = await app.request('/internal/telemetry-actions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        actionKey: 'telemetry.event.ingest',
+        payload: {
+          source: 'backend',
+          eventType: 'perf.metric',
+          name: 'response.time',
+        },
+      }),
+    });
+
+    expect(res.status).toBe(401);
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('should return 403 when X-Internal-Service-Token is mismatched', async () => {
+    const res = await app.request('/internal/telemetry-actions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Service-Token': 'wrong-token',
+      },
+      body: JSON.stringify({
+        actionKey: 'telemetry.event.ingest',
+        payload: {
+          source: 'backend',
+          eventType: 'perf.metric',
+          name: 'response.time',
+        },
+      }),
+    });
+
+    expect(res.status).toBe(403);
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('FORBIDDEN');
   });
 });
