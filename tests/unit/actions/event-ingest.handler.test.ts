@@ -62,6 +62,50 @@ describe('Event Ingest Handler', () => {
       });
     });
 
+    it('should strip query strings from URL-like telemetry metadata', async () => {
+      const mockRepo = createMockRepository();
+      const handler = createEventIngestHandler(mockRepo);
+
+      const payload = {
+        source: 'gateway',
+        eventType: 'http.request',
+        name: 'gateway.request.completed',
+        targetId: 'https://xynes.example/resource?token=supersecret',
+        metadata: {
+          method: 'GET',
+          path: '/workspaces/123/documents?token=supersecret&foo=bar',
+          referer: 'https://example.com/callback?code=supersecret',
+          nested: {
+            url: 'https://xynes.example/path?token=supersecret',
+          },
+        },
+      };
+
+      await handler(payload, { requestId: 'test-req-id' });
+
+      const createCalls = (mockRepo.create as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+      const created = createCalls[0]?.[0] as { metadata?: unknown };
+      const createdJson = JSON.stringify(created.metadata);
+
+      expect(createdJson).not.toContain('supersecret');
+      expect(createdJson).not.toContain('token=');
+
+      expect(created.metadata).toEqual(
+        expect.objectContaining({
+          method: 'GET',
+          path: '/workspaces/123/documents',
+          referer: 'https://example.com/callback',
+          nested: { url: 'https://xynes.example/path' },
+        })
+      );
+
+      expect(createCalls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          targetId: 'https://xynes.example/resource',
+        })
+      );
+    });
+
     it('should create event with minimal required fields', async () => {
       const mockRepo = createMockRepository();
       const handler = createEventIngestHandler(mockRepo);

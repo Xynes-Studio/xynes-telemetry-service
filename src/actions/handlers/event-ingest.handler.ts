@@ -3,6 +3,7 @@ import { eventIngestPayloadSchema, type EventIngestPayload, type EventIngestResu
 import { eventsRepository, type EventsRepository } from '../../repositories';
 import { ValidationError } from '../../errors';
 import { ZodError } from 'zod';
+import { sanitizeUrlQueryStringsDeep, stripQueryFromUrlLikeString } from '../../utils/url';
 
 export function createEventIngestHandler(
   repository: EventsRepository = eventsRepository
@@ -27,8 +28,8 @@ export function createEventIngestHandler(
       eventType: validatedPayload.eventType,
       name: validatedPayload.name,
       targetType: validatedPayload.targetType ?? null,
-      targetId: validatedPayload.targetId ?? null,
-      metadata: validatedPayload.metadata ?? null,
+      targetId: validatedPayload.targetId ? stripQueryFromUrlLikeString(validatedPayload.targetId) : null,
+      metadata: validatedPayload.metadata ? sanitizeUrlQueryStringsDeep(validatedPayload.metadata) : null,
     };
 
     // Insert into database

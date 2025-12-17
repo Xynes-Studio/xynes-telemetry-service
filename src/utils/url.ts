@@ -1,0 +1,60 @@
+/**
+ * URL sanitization helpers.
+ *
+ * Telemetry must not persist raw query strings since they may contain secrets.
+ */
+
+export function stripQueryFromUrlLikeString(value: string): string {
+  if (value.startsWith('/')) {
+    return stripQueryAndHash(value);
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const url = new URL(value);
+      return `${url.origin}${url.pathname}`;
+    } catch {
+      return stripQueryAndHash(value);
+    }
+  }
+
+  return value;
+}
+
+export function sanitizeUrlQueryStringsDeep<T>(value: T): T {
+  return sanitizeUnknown(value) as T;
+}
+
+const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+function sanitizeUnknown(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return stripQueryFromUrlLikeString(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(sanitizeUnknown);
+  }
+
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  const proto = Object.getPrototypeOf(value);
+  if (proto !== Object.prototype && proto !== null) {
+    return value;
+  }
+
+  // Create a null-prototype output object to avoid prototype-pollution via keys like "__proto__".
+  const out: Record<string, unknown> = Object.create(null);
+  for (const [k, v] of Object.entries(value)) {
+    if (UNSAFE_KEYS.has(k)) continue;
+    out[k] = sanitizeUnknown(v);
+  }
+  return out;
+}
+
+function stripQueryAndHash(value: string): string {
+  const idx = value.search(/[?#]/);
+  return idx === -1 ? value : value.slice(0, idx);
+}

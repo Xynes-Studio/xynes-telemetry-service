@@ -156,6 +156,8 @@ X-XS-User-Id: <user-uuid>         (optional)
 
 Ingest a telemetry event.
 
+Security: before persisting to Postgres, the service strips query strings/fragments from URL-like values in `payload.metadata` and `payload.targetId` to avoid accidentally storing secrets (e.g. `?token=...`).
+
 **Request Body**
 ```json
 {
