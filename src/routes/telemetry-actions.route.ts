@@ -4,6 +4,7 @@ import { executeTelemetryAction, type TelemetryActionKey, type TelemetryActionCo
 import { ValidationError } from '../errors';
 import { ZodError } from 'zod';
 import { internalServiceAuthMiddleware } from '../middleware/internal-service-auth.middleware';
+import { generateRequestId } from '../utils/request';
 
 const telemetryActionsRoute = new Hono();
 telemetryActionsRoute.use('/internal/*', internalServiceAuthMiddleware);
@@ -12,13 +13,6 @@ const actionRequestSchema = z.object({
   actionKey: z.enum(['telemetry.event.ingest'] as const),
   payload: z.unknown(),
 });
-
-/**
- * Generates a unique request ID for correlation.
- */
-function generateRequestId(): string {
-  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
   const requestId = generateRequestId();
