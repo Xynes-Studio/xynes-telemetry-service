@@ -1,12 +1,6 @@
 import type { Context, Hono } from 'hono';
 import { UnknownActionError, ValidationError, MetadataLimitError } from '../errors';
-
-/**
- * Generates a unique request ID for error correlation.
- */
-function generateRequestId(): string {
-  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
+import { generateRequestId } from '../utils/request';
 
 /**
  * Standard error response envelope.
