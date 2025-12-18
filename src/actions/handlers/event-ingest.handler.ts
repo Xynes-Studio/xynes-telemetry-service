@@ -1,15 +1,16 @@
 import type { TelemetryActionHandler, TelemetryActionContext } from '../types';
 import { eventIngestPayloadSchema, type EventIngestPayload, type EventIngestResult } from '../schemas';
 import { eventsRepository, type EventsRepository } from '../../repositories';
-import { ValidationError } from '../../errors';
+import { ValidationError, MetadataLimitError } from '../../errors';
 import { ZodError } from 'zod';
 import { sanitizeUrlQueryStringsDeep, stripQueryFromUrlLikeString } from '../../utils/url';
+import { validateMetadata } from '../../utils/metadata-validator';
 
 export function createEventIngestHandler(
   repository: EventsRepository = eventsRepository
 ): TelemetryActionHandler<unknown, EventIngestResult> {
   return async (payload: unknown, ctx: TelemetryActionContext): Promise<EventIngestResult> => {
-    // Validate payload
+    // Validate payload structure with Zod
     let validatedPayload: EventIngestPayload;
     try {
       validatedPayload = eventIngestPayloadSchema.parse(payload);
@@ -18,6 +19,14 @@ export function createEventIngestHandler(
         throw new ValidationError(error);
       }
       throw error;
+    }
+
+    // Validate metadata depth and size limits
+    if (validatedPayload.metadata) {
+      const metadataCheck = validateMetadata(validatedPayload.metadata);
+      if (!metadataCheck.valid) {
+        throw new MetadataLimitError(metadataCheck.reason!, metadataCheck.message!);
+      }
     }
 
     // Build event row from payload and context

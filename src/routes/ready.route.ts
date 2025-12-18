@@ -26,8 +26,10 @@ export function createReadyRoute({
       await check({ databaseUrl, schemaName });
       return c.json({ status: 'ready' }, 200);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return c.json({ status: 'not_ready', error: message }, 503);
+      // Log full error for debugging (server-side only)
+      console.error('Ready check failed:', error);
+      // Return generic message - do not expose internal details (hostnames, schema names, connection strings)
+      return c.json({ status: 'not_ready', error: 'db_unavailable' }, 503);
     }
   });
 

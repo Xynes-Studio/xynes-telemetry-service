@@ -1,5 +1,5 @@
 import type { Context, Hono } from 'hono';
-import { UnknownActionError, ValidationError } from '../errors';
+import { UnknownActionError, ValidationError, MetadataLimitError } from '../errors';
 
 /**
  * Generates a unique request ID for error correlation.
@@ -47,6 +47,13 @@ export function setupErrorHandler(app: Hono): void {
       return c.json(
         createErrorResponse('VALIDATION_ERROR', error.message, requestId, error.issues),
         400
+      );
+    }
+
+    if (error instanceof MetadataLimitError) {
+      return c.json(
+        createErrorResponse('METADATA_LIMIT_EXCEEDED', error.message, requestId, { reason: error.reason }),
+        413 // Payload Too Large
       );
     }
 
