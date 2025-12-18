@@ -68,7 +68,20 @@ function checkDepth(value: unknown, currentDepth: number, maxDepth: number): boo
 }
 
 /**
+ * Gets the UTF-8 byte length of a string.
+ * Prefers Buffer.byteLength (Node/Bun) with TextEncoder fallback (browser).
+ */
+function getUtf8ByteLength(str: string): number {
+    if (typeof Buffer !== 'undefined') {
+        return Buffer.byteLength(str, 'utf8');
+    }
+    // Fallback for browser environments
+    return new TextEncoder().encode(str).length;
+}
+
+/**
  * Validates that the serialized size of an object does not exceed the maximum.
+ * Uses UTF-8 byte length for accurate size measurement.
  *
  * @param obj - The object to validate
  * @param maxSize - Maximum allowed size in bytes (default: METADATA_MAX_SIZE_BYTES)
@@ -84,7 +97,7 @@ export function validateMetadataSize(
 
     try {
         const serialized = JSON.stringify(obj);
-        return serialized.length <= maxSize;
+        return getUtf8ByteLength(serialized) <= maxSize;
     } catch {
         // If serialization fails, consider it invalid
         return false;

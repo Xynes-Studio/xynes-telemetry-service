@@ -122,8 +122,30 @@ describe('Metadata Validator', () => {
         it('should handle arrays in size calculation', () => {
             const largeArray = { items: Array(1000).fill('large string value here') };
             const serialized = JSON.stringify(largeArray);
-            const expectedResult = serialized.length <= METADATA_MAX_SIZE_BYTES;
+            const byteLength = Buffer.byteLength(serialized, 'utf8');
+            const expectedResult = byteLength <= METADATA_MAX_SIZE_BYTES;
             expect(validateMetadataSize(largeArray)).toBe(expectedResult);
+        });
+
+        it('should correctly count UTF-8 multi-byte characters', () => {
+            // Each emoji is 4 bytes in UTF-8, but 2 UTF-16 code units
+            // 2600 emojis × 4 bytes = 10400 bytes > 10KB limit
+            // But string.length would show 5200, which is < 10KB
+            const emoji = '😀';
+            const emojiCount = 2600;
+            const manyEmojis = emoji.repeat(emojiCount);
+            const metadata = { data: manyEmojis };
+
+            // Verify our understanding: string length vs byte length
+            const serialized = JSON.stringify(metadata);
+            const stringLength = serialized.length;
+            const byteLength = Buffer.byteLength(serialized, 'utf8');
+
+            // String length will be much smaller than byte length for emojis
+            expect(byteLength).toBeGreaterThan(stringLength);
+
+            // The function should reject based on byte length, not string length
+            expect(validateMetadataSize(metadata)).toBe(false);
         });
     });
 
