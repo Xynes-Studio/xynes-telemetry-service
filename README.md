@@ -156,7 +156,9 @@ X-XS-User-Id: <user-uuid>         (optional)
 
 Ingest a telemetry event.
 
-Security: before persisting to Postgres, the service strips query strings/fragments from URL-like values in `payload.metadata` and `payload.targetId` to avoid accidentally storing secrets (e.g. `?token=...`).
+**Security**:
+- Query strings/fragments are stripped from URL-like values in `metadata` and `targetId` to avoid storing secrets
+- Metadata is validated for depth (max 5 levels) and size (max 10KB)
 
 **Request Body**
 ```json
@@ -187,6 +189,21 @@ Security: before persisting to Postgres, the service strips query strings/fragme
 }
 ```
 
+**Error Response (413 Payload Too Large)**
+
+Returned when metadata exceeds limits:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "METADATA_LIMIT_EXCEEDED",
+    "message": "Metadata exceeds maximum depth of 5 levels",
+    "details": { "reason": "depth" }
+  }
+}
+```
+
 ## Event Schema
 
 | Field | Type | Required | Description |
@@ -196,11 +213,14 @@ Security: before persisting to Postgres, the service strips query strings/fragme
 | name | string | Yes | Specific event name (e.g., editor.block.added) |
 | targetType | string | No | Target entity type (doc, cms.entry, crm.lead) |
 | targetId | string | No | Target entity identifier |
-| metadata | object | No | Arbitrary key-value data |
+| metadata | object | No | Arbitrary key-value data (max 5 levels deep, max 10KB) |
 
 ## Architecture
 
-See [ADR-001: Telemetry Service Design](./docs/adr/001-telemetry-service.md) for architectural decisions.
+See the following ADRs for architectural decisions:
+
+- [ADR-001: Telemetry Service Design](./docs/adr/001-telemetry-service.md)
+- [ADR-002: Security Hardening](./docs/adr/002-security-hardening.md)
 
 ## License
 

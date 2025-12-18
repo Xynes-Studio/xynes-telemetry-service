@@ -68,12 +68,31 @@ bun test:coverage
 - **Imports**: Use explicit relative imports.
 - **Types**: Avoid `any`. Use `unknown` with Zod parsing for external inputs.
 
+## Security Practices
+
+### Input Validation
+
+All external inputs must be validated:
+
+1. **Zod Schema Validation**: Structure and types
+2. **Metadata Limits**: Depth (max 5) and size (max 10KB) - see `src/utils/metadata-validator.ts`
+3. **URL Sanitization**: Query strings stripped from URL-like values
+
+### Error Responses
+
+- **Do NOT expose internal details** in client-facing errors
+- Log full errors server-side for debugging
+- Return generic messages (e.g., `db_unavailable`) for infrastructure failures
+
+See [ADR-002: Security Hardening](./adr/002-security-hardening.md) for rationale.
+
 ## Database Migrations
 
 1. Modify schema in `src/db/schema`.
 2. Generate migration: `bun run db:generate`
 3. Apply migration: `bun run db:migrate`
 
-## adding new dependencies
+## Adding New Dependencies
 
 Use `bun add` or `bun add -d` for dev dependencies.
+

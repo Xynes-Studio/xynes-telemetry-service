@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "xynes-telemetry-service",
@@ -13,6 +14,7 @@
         "@types/bun": "latest",
         "@vitest/coverage-v8": "^4.0.15",
         "drizzle-kit": "^0.31.8",
+        "typescript": "^5.0.0",
         "vitest": "^4.0.15",
       },
       "peerDependencies": {

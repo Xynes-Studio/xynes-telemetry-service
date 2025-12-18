@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { setupErrorHandler } from '../../../src/middleware/error-handler.middleware';
-import { UnknownActionError, ValidationError } from '../../../src/errors';
+import { UnknownActionError, ValidationError, MetadataLimitError } from '../../../src/errors';
 import { ZodError, z } from 'zod';
 
 describe('Error Handler (setupErrorHandler)', () => {
@@ -14,7 +14,7 @@ describe('Error Handler (setupErrorHandler)', () => {
 
   it('should return 400 for ValidationError', async () => {
     const schema = z.object({ name: z.string() });
-    
+
     app.get('/test', async () => {
       try {
         schema.parse({});
@@ -25,9 +25,9 @@ describe('Error Handler (setupErrorHandler)', () => {
     });
 
     const res = await app.request('/test');
-    
+
     expect(res.status).toBe(400);
-    
+
     const body = await res.json() as any;
     expect(body.ok).toBe(false);
     expect(body.error.code).toBe('VALIDATION_ERROR');
@@ -41,13 +41,52 @@ describe('Error Handler (setupErrorHandler)', () => {
     });
 
     const res = await app.request('/test');
-    
+
     expect(res.status).toBe(400);
-    
+
     const body = await res.json() as any;
     expect(body.ok).toBe(false);
     expect(body.error.code).toBe('UNKNOWN_ACTION');
     expect(body.error.message).toContain('test.action');
+  });
+
+  it('should return 413 for MetadataLimitError with depth reason', async () => {
+    app.get('/test', async () => {
+      throw new MetadataLimitError('depth', 'Metadata exceeds maximum depth of 5 levels');
+    });
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+    const res = await app.request('/test');
+
+    expect(res.status).toBe(413);
+
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('METADATA_LIMIT_EXCEEDED');
+    expect(body.error.message).toContain('depth');
+    expect(body.error.details).toEqual({ reason: 'depth' });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('should return 413 for MetadataLimitError with size reason', async () => {
+    app.get('/test', async () => {
+      throw new MetadataLimitError('size', 'Metadata exceeds maximum size');
+    });
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+    const res = await app.request('/test');
+
+    expect(res.status).toBe(413);
+
+    const body = await res.json() as any;
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('METADATA_LIMIT_EXCEEDED');
+    expect(body.error.details).toEqual({ reason: 'size' });
+
+    consoleSpy.mockRestore();
   });
 
   it('should return 500 for generic Error', async () => {
@@ -56,12 +95,12 @@ describe('Error Handler (setupErrorHandler)', () => {
     });
 
     // Suppress console.error for this test
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     const res = await app.request('/test');
-    
+
     expect(res.status).toBe(500);
-    
+
     const body = await res.json() as any;
     expect(body.ok).toBe(false);
     expect(body.error.code).toBe('INTERNAL_ERROR');
@@ -76,12 +115,12 @@ describe('Error Handler (setupErrorHandler)', () => {
       throw 'string error';
     });
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     const res = await app.request('/test');
-    
+
     expect(res.status).toBe(500);
-    
+
     const body = await res.json() as { error: string };
     expect(body.error).toBe('InternalServerError');
 
@@ -92,9 +131,9 @@ describe('Error Handler (setupErrorHandler)', () => {
     app.get('/test', (c) => c.json({ success: true }));
 
     const res = await app.request('/test');
-    
+
     expect(res.status).toBe(200);
-    
+
     const body = await res.json() as { success: boolean };
     expect(body.success).toBe(true);
   });
