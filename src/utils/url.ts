@@ -6,12 +6,12 @@
 
 export function stripQueryFromUrlLikeString(value: string): string {
   // Root-relative path (but not protocol-relative URLs like "//example.com/...").
-  if (value.startsWith('/') && !value.startsWith('//')) {
+  if (value.startsWith("/") && !value.startsWith("//")) {
     return stripQueryAndHash(value);
   }
 
   // Protocol-relative URL: "//example.com/path?token=..." -> "https://example.com/path"
-  const normalized = value.startsWith('//') ? `https:${value}` : value;
+  const normalized = value.startsWith("//") ? `https:${value}` : value;
 
   // Network URLs with an explicit scheme (http(s), ws(s), ftp, etc.).
   if (/^\w+:\/\//.test(normalized)) {
@@ -30,10 +30,10 @@ export function sanitizeUrlQueryStringsDeep<T>(value: T): T {
   return sanitizeUnknown(value) as T;
 }
 
-const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+const UNSAFE_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
 function sanitizeUnknown(value: unknown): unknown {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return stripQueryFromUrlLikeString(value);
   }
 
@@ -41,7 +41,7 @@ function sanitizeUnknown(value: unknown): unknown {
     return value.map(sanitizeUnknown);
   }
 
-  if (value === null || typeof value !== 'object') {
+  if (value === null || typeof value !== "object") {
     return value;
   }
 
