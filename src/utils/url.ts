@@ -50,8 +50,10 @@ function sanitizeUnknown(value: unknown): unknown {
     return value;
   }
 
-  // Create a null-prototype output object to avoid prototype-pollution via keys like "__proto__".
-  const out: Record<string, unknown> = Object.create(null);
+  // Use a regular object (instead of null-prototype) to avoid compatibility issues
+  // with libraries like Drizzle that check prototype.constructor.
+  // Keys like "__proto__", "prototype", "constructor" are still filtered out.
+  const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) {
     if (UNSAFE_KEYS.has(k)) continue;
     out[k] = sanitizeUnknown(v);
