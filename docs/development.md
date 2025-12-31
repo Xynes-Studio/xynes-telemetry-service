@@ -115,8 +115,8 @@ This returns a `403 Forbidden` response with the specified error code.
 
 | Action | Permission Required |
 |--------|---------------------|
-| `telemetry.events.listRecentForWorkspace` | `telemetry.view` |
-| `telemetry.stats.summaryByRoute` | `telemetry.view` |
+| `telemetry.events.listRecentForWorkspace` | `telemetry.events.view` |
+| `telemetry.stats.summaryByRoute` | `telemetry.events.view` |
 | `telemetry.events.ingest` | Internal service token |
 
 ## Database Migrations

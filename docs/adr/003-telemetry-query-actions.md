@@ -20,7 +20,7 @@ Without internal query actions:
 
 ### New Action Keys
 
-We introduce two new internal actions accessible only to users with `telemetry.view` permission:
+We introduce two new internal actions accessible only to users with `telemetry.events.view` permission:
 
 | Action Key | Description | Returns |
 |------------|-------------|---------|
@@ -36,12 +36,12 @@ We introduce two new internal actions accessible only to users with `telemetry.v
                           │
                           ▼
                     ┌───────────┐
-                    │   Authz   │ ◀── telemetry.view permission
+                    │   Authz   │ ◀── telemetry.events.view permission
                     └───────────┘
 ```
 
 1. **Gateway**: Routes `/workspaces/:workspaceId/telemetry/*` to telemetry-service
-2. **Authz**: Validates user has `telemetry.view` permission for workspace
+2. **Authz**: Validates user has `telemetry.events.view` permission for workspace
 3. **Telemetry Service**: Handler validates workspace ID matches context
 
 ### Data Sanitization
@@ -61,7 +61,7 @@ Events returned by `listRecentForWorkspace` are **sanitized** to prevent sensiti
 
 ### Role Permissions
 
-| Role | `telemetry.view` |
+| Role | `telemetry.events.view` |
 |------|------------------|
 | `super_admin` | ✅ |
 | `workspace_owner` | ✅ |
@@ -98,7 +98,7 @@ tests/unit/actions/
 ### Cross-Service Changes
 
 **xynes-authz-service:**
-- Added `telemetry.view` permission to seed
+- Added `telemetry.events.view` permission to seed
 
 **xynes-platform-config:**
 - Added routes for telemetry query endpoints
