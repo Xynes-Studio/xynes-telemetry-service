@@ -204,6 +204,47 @@ Returned when metadata exceeds limits:
 }
 ```
 
+#### telemetry.events.ingest (TELE-GW-1)
+
+Canonical action key for gateway HTTP request telemetry events. This is the preferred action key for structured telemetry ingestion.
+
+**Request Body**
+```json
+{
+  "actionKey": "telemetry.events.ingest",
+  "payload": {
+    "source": "gateway",
+    "eventType": "http_request",
+    "name": "gateway.http_request",
+    "targetType": "service",
+    "targetId": "doc-service",
+    "metadata": {
+      "type": "http_request",
+      "routeId": "route-123",
+      "serviceKey": "doc-service",
+      "actionKey": "docs.document.create",
+      "method": "POST",
+      "path": "/workspaces/ws-1/documents",
+      "statusCode": 201,
+      "durationMs": 45,
+      "workspaceId": "ws-1",
+      "userId": "user-456",
+      "clientIpHash": "abc123def456",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "meta": {
+        "userAgent": "Mozilla/5.0 (Macintosh...)",
+        "pathPattern": "/workspaces/:workspaceId/documents"
+      }
+    }
+  }
+}
+```
+
+**Security Notes:**
+- `path` must not contain query strings (blocked by schema validation)
+- `clientIpHash` should be a one-way hash, not the raw IP
+- `meta.userAgent` is limited to 256 characters
+
 ## Event Schema
 
 | Field | Type | Required | Description |

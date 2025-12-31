@@ -1,48 +1,48 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { config, validateConfig } from '../../../src/config';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { config, validateConfig } from "../../../src/config";
 
-describe('Config', () => {
-  describe('config object', () => {
-    it('should have database configuration', () => {
-      expect(config).toHaveProperty('database');
-      expect(config.database).toHaveProperty('url');
+describe("Config", () => {
+  // Store original DATABASE_URL before any tests run
+  const originalDatabaseUrl = process.env.DATABASE_URL;
+
+  afterEach(() => {
+    // Always restore DATABASE_URL after each test
+    if (originalDatabaseUrl !== undefined) {
+      process.env.DATABASE_URL = originalDatabaseUrl;
+    }
+  });
+
+  describe("config object", () => {
+    it("should have database configuration", () => {
+      expect(config).toHaveProperty("database");
+      expect(config.database).toHaveProperty("url");
     });
 
-    it('should have server configuration', () => {
-      expect(config).toHaveProperty('server');
-      expect(config.server).toHaveProperty('port');
+    it("should have server configuration", () => {
+      expect(config).toHaveProperty("server");
+      expect(config.server).toHaveProperty("port");
     });
 
-    it('should have environment setting', () => {
-      expect(config).toHaveProperty('env');
+    it("should have environment setting", () => {
+      expect(config).toHaveProperty("env");
     });
   });
 
-  describe('validateConfig', () => {
-    it('should throw error when DATABASE_URL is missing', () => {
-      const originalUrl = process.env.DATABASE_URL;
-      
-      // Temporarily remove DATABASE_URL
-      delete process.env.DATABASE_URL;
-      
-      // Need to re-import config to test validation
-      // Instead, let's test the config object directly
-      const testConfig = {
-        database: { url: '' },
-        server: { port: 3000 },
-        env: 'test',
-      };
-      
-      // Restore for other tests
-      process.env.DATABASE_URL = originalUrl;
-      
-      // The validation function checks process.env directly via config
-      // Since vi.stubEnv is used in setup, the URL exists
+  describe("validateConfig", () => {
+    it("should not throw when DATABASE_URL is provided", () => {
+      // Ensure DATABASE_URL is set
+      process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
       expect(() => validateConfig()).not.toThrow();
     });
 
-    it('should not throw when DATABASE_URL is provided', () => {
-      expect(() => validateConfig()).not.toThrow();
+    it("should throw error when DATABASE_URL is missing", () => {
+      // Remove DATABASE_URL
+      delete process.env.DATABASE_URL;
+
+      // validateConfig checks process.env directly, so this should throw
+      expect(() => validateConfig()).toThrow(
+        "DATABASE_URL environment variable is required"
+      );
     });
   });
 });
