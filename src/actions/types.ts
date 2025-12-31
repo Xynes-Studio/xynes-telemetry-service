@@ -1,4 +1,6 @@
-export type TelemetryActionKey = 'telemetry.event.ingest';
+export type TelemetryActionKey =
+  | "telemetry.event.ingest" // Legacy action key
+  | "telemetry.events.ingest"; // TELE-GW-1: New canonical action key
 
 export interface TelemetryActionContext {
   workspaceId?: string;

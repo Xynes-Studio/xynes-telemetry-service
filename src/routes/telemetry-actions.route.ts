@@ -1,20 +1,28 @@
-import { Hono } from 'hono';
-import { z } from 'zod';
-import { executeTelemetryAction, type TelemetryActionKey, type TelemetryActionContext } from '../actions';
-import { ValidationError } from '../errors';
-import { ZodError } from 'zod';
-import { internalServiceAuthMiddleware } from '../middleware/internal-service-auth.middleware';
-import { generateRequestId } from '../utils/request';
+import { Hono } from "hono";
+import { z } from "zod";
+import {
+  executeTelemetryAction,
+  type TelemetryActionKey,
+  type TelemetryActionContext,
+} from "../actions";
+import { ValidationError } from "../errors";
+import { ZodError } from "zod";
+import { internalServiceAuthMiddleware } from "../middleware/internal-service-auth.middleware";
+import { generateRequestId } from "../utils/request";
 
 const telemetryActionsRoute = new Hono();
-telemetryActionsRoute.use('/internal/*', internalServiceAuthMiddleware);
+telemetryActionsRoute.use("/internal/*", internalServiceAuthMiddleware);
 
+// TELE-GW-1: Updated schema to accept both legacy and new action keys
 const actionRequestSchema = z.object({
-  actionKey: z.enum(['telemetry.event.ingest'] as const),
+  actionKey: z.enum([
+    "telemetry.event.ingest",
+    "telemetry.events.ingest",
+  ] as const),
   payload: z.unknown(),
 });
 
-telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
+telemetryActionsRoute.post("/internal/telemetry-actions", async (c) => {
   const requestId = generateRequestId();
 
   // Parse request body
@@ -33,8 +41,8 @@ telemetryActionsRoute.post('/internal/telemetry-actions', async (c) => {
 
   // Build context from headers
   const ctx: TelemetryActionContext = {
-    workspaceId: c.req.header('X-Workspace-Id') || undefined,
-    userId: c.req.header('X-XS-User-Id') || undefined,
+    workspaceId: c.req.header("X-Workspace-Id") || undefined,
+    userId: c.req.header("X-XS-User-Id") || undefined,
     requestId,
   };
 
