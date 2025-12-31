@@ -1,6 +1,11 @@
-import type { Context, Hono } from 'hono';
-import { UnknownActionError, ValidationError, MetadataLimitError } from '../errors';
-import { generateRequestId } from '../utils/request';
+import type { Context, Hono } from "hono";
+import {
+  UnknownActionError,
+  ValidationError,
+  MetadataLimitError,
+  AuthorizationError,
+} from "../errors";
+import { generateRequestId } from "../utils/request";
 
 /**
  * Standard error response envelope.
@@ -34,36 +39,56 @@ function createErrorResponse(
 
 export function setupErrorHandler(app: Hono): void {
   app.onError((error, c: Context) => {
-    const requestId = c.get('requestId') || generateRequestId();
-    console.error('Error:', { message: error.message, requestId });
+    const requestId = c.get("requestId") || generateRequestId();
+    console.error("Error:", { message: error.message, requestId });
 
     if (error instanceof ValidationError) {
       return c.json(
-        createErrorResponse('VALIDATION_ERROR', error.message, requestId, error.issues),
+        createErrorResponse(
+          "VALIDATION_ERROR",
+          error.message,
+          requestId,
+          error.issues
+        ),
         400
       );
     }
 
     if (error instanceof MetadataLimitError) {
       return c.json(
-        createErrorResponse('METADATA_LIMIT_EXCEEDED', error.message, requestId, { reason: error.reason }),
+        createErrorResponse(
+          "METADATA_LIMIT_EXCEEDED",
+          error.message,
+          requestId,
+          {
+            reason: error.reason,
+          }
+        ),
         413 // Payload Too Large
       );
     }
 
     if (error instanceof UnknownActionError) {
       return c.json(
-        createErrorResponse('UNKNOWN_ACTION', error.message, requestId),
+        createErrorResponse("UNKNOWN_ACTION", error.message, requestId),
         400
       );
     }
 
+    // TELE-VIEW-1: Authorization error
+    if (error instanceof AuthorizationError) {
+      return c.json(
+        createErrorResponse(error.code, error.message, requestId),
+        error.statusCode
+      );
+    }
+
     // Generic error
-    const message = error instanceof Error ? error.message : 'Internal server error';
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
     return c.json(
-      createErrorResponse('INTERNAL_ERROR', message, requestId),
+      createErrorResponse("INTERNAL_ERROR", message, requestId),
       500
     );
   });
 }
-

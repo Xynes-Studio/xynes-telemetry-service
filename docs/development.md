@@ -47,6 +47,17 @@ export const myHandler = createMyHandler(repo);
 registerTelemetryAction('my.action', myHandler);
 ```
 
+### Available Actions
+
+| Action Key | Type | Description |
+|------------|------|-------------|
+| `telemetry.event.ingest` | Write | Legacy ingest action |
+| `telemetry.events.ingest` | Write | Canonical ingest action (TELE-GW-1) |
+| `telemetry.events.listRecentForWorkspace` | Read | List recent events (TELE-VIEW-1) |
+| `telemetry.stats.summaryByRoute` | Read | Aggregated route stats (TELE-VIEW-1) |
+
+See [ADR-003: Telemetry Query Actions](./adr/003-telemetry-query-actions.md) for details on query actions.
+
 ## Testing Standards
 
 We follow strict TDD practices.
@@ -85,6 +96,28 @@ All external inputs must be validated:
 - Return generic messages (e.g., `db_unavailable`) for infrastructure failures
 
 See [ADR-002: Security Hardening](./adr/002-security-hardening.md) for rationale.
+
+## Authorization
+
+The `AuthorizationError` class handles workspace access control:
+
+```typescript
+import { AuthorizationError } from '../errors';
+
+if (ctx.workspaceId !== payload.workspaceId) {
+  throw new AuthorizationError('Workspace ID mismatch', 'WORKSPACE_MISMATCH');
+}
+```
+
+This returns a `403 Forbidden` response with the specified error code.
+
+### Required Permissions
+
+| Action | Permission Required |
+|--------|---------------------|
+| `telemetry.events.listRecentForWorkspace` | `telemetry.view` |
+| `telemetry.stats.summaryByRoute` | `telemetry.view` |
+| `telemetry.events.ingest` | Internal service token |
 
 ## Database Migrations
 
