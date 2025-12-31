@@ -1,1 +1,1 @@
-export { eventsRepository, createEventsRepository, type EventsRepository } from './events.repository';
+export { eventsRepository, createEventsRepository, type EventsRepository, type RouteStatsRow } from './events.repository';

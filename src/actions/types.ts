@@ -1,6 +1,8 @@
 export type TelemetryActionKey =
   | "telemetry.event.ingest" // Legacy action key
-  | "telemetry.events.ingest"; // TELE-GW-1: New canonical action key
+  | "telemetry.events.ingest" // TELE-GW-1: New canonical action key
+  | "telemetry.events.listRecentForWorkspace" // TELE-VIEW-1: List recent events
+  | "telemetry.stats.summaryByRoute"; // TELE-VIEW-1: Aggregated stats
 
 export interface TelemetryActionContext {
   workspaceId?: string;

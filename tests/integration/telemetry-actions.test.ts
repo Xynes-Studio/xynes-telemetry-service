@@ -6,6 +6,8 @@ import {
   registerTelemetryAction,
 } from "../../src/actions/registry";
 import { createEventIngestHandler } from "../../src/actions/handlers/event-ingest.handler";
+import { createEventsListHandler } from "../../src/actions/handlers/events-list.handler";
+import { createStatsSummaryHandler } from "../../src/actions/handlers/stats-summary.handler";
 import type { Event } from "../../src/db/schema";
 import { INTERNAL_SERVICE_TOKEN } from "../support/internal-auth";
 
@@ -29,6 +31,8 @@ describe("Telemetry Actions Endpoint", () => {
 
     const mockRepo = {
       create: vi.fn().mockResolvedValue(mockEvent),
+      listRecent: vi.fn().mockResolvedValue([]),
+      aggregateByRoute: vi.fn().mockResolvedValue([]),
     };
 
     const handler = createEventIngestHandler(mockRepo);
@@ -366,6 +370,165 @@ describe("Telemetry Actions Endpoint", () => {
 
       // Should still succeed - sanitization happens server-side
       expect(res.status).toBe(201);
+    });
+  });
+
+  // TELE-VIEW-1: Query action tests
+  describe("telemetry.events.listRecentForWorkspace action (TELE-VIEW-1)", () => {
+    const mockEvents: Event[] = [
+      {
+        id: "event-1",
+        workspaceId: "550e8400-e29b-41d4-a716-446655440000",
+        userId: "user-456",
+        source: "gateway",
+        eventType: "http_request",
+        name: "gateway.http_request",
+        targetType: "service",
+        targetId: "doc-service",
+        metadata: {
+          type: "http_request",
+          routeId: "route-1",
+          statusCode: 200,
+          durationMs: 45,
+        },
+        createdAt: new Date("2024-01-15T12:00:00Z"),
+      },
+    ];
+
+    beforeEach(() => {
+      clearRegistry();
+      const mockRepo = {
+        create: vi.fn(),
+        listRecent: vi.fn().mockResolvedValue(mockEvents),
+        aggregateByRoute: vi.fn(),
+      };
+      const handler = createEventsListHandler(mockRepo);
+      registerTelemetryAction(
+        "telemetry.events.listRecentForWorkspace",
+        handler
+      );
+    });
+
+    it("should return 200 with events list for valid request", async () => {
+      const res = await app.request("/internal/telemetry-actions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+          "X-Workspace-Id": "550e8400-e29b-41d4-a716-446655440000",
+        },
+        body: JSON.stringify({
+          actionKey: "telemetry.events.listRecentForWorkspace",
+          payload: {
+            workspaceId: "550e8400-e29b-41d4-a716-446655440000",
+            limit: 10,
+          },
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.ok).toBe(true);
+      expect(body.data).toHaveProperty("events");
+      expect(body.data.events).toBeInstanceOf(Array);
+    });
+
+    it("should return 400 for invalid workspaceId", async () => {
+      const res = await app.request("/internal/telemetry-actions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        },
+        body: JSON.stringify({
+          actionKey: "telemetry.events.listRecentForWorkspace",
+          payload: {
+            workspaceId: "not-a-valid-uuid",
+          },
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as any;
+      expect(body.ok).toBe(false);
+      expect(body.error.code).toBe("VALIDATION_ERROR");
+    });
+  });
+
+  describe("telemetry.stats.summaryByRoute action (TELE-VIEW-1)", () => {
+    const mockRouteStats = [
+      {
+        routeId: "route-1",
+        serviceKey: "doc-service",
+        actionKey: "docs.document.create",
+        method: "POST",
+        pathPattern: "/workspaces/:workspaceId/documents",
+        totalRequests: 100,
+        successCount: 95,
+        errorCount: 5,
+        avgDurationMs: 45.5,
+        minDurationMs: 10,
+        maxDurationMs: 200,
+      },
+    ];
+
+    beforeEach(() => {
+      clearRegistry();
+      const mockRepo = {
+        create: vi.fn(),
+        listRecent: vi.fn(),
+        aggregateByRoute: vi.fn().mockResolvedValue(mockRouteStats),
+      };
+      const handler = createStatsSummaryHandler(mockRepo);
+      registerTelemetryAction("telemetry.stats.summaryByRoute", handler);
+    });
+
+    it("should return 200 with stats summary for valid request", async () => {
+      const res = await app.request("/internal/telemetry-actions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+          "X-Workspace-Id": "550e8400-e29b-41d4-a716-446655440000",
+        },
+        body: JSON.stringify({
+          actionKey: "telemetry.stats.summaryByRoute",
+          payload: {
+            workspaceId: "550e8400-e29b-41d4-a716-446655440000",
+            timeWindowHours: 24,
+          },
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.ok).toBe(true);
+      expect(body.data).toHaveProperty("routes");
+      expect(body.data).toHaveProperty("totals");
+      expect(body.data).toHaveProperty("workspaceId");
+      expect(body.data).toHaveProperty("timeWindowHours");
+    });
+
+    it("should return 400 for invalid timeWindowHours", async () => {
+      const res = await app.request("/internal/telemetry-actions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        },
+        body: JSON.stringify({
+          actionKey: "telemetry.stats.summaryByRoute",
+          payload: {
+            workspaceId: "550e8400-e29b-41d4-a716-446655440000",
+            timeWindowHours: 500, // Exceeds MAX_TIME_WINDOW_HOURS
+          },
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as any;
+      expect(body.ok).toBe(false);
+      expect(body.error.code).toBe("VALIDATION_ERROR");
     });
   });
 });

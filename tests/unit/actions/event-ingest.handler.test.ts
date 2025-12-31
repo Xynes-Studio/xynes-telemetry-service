@@ -22,6 +22,8 @@ describe('Event Ingest Handler', () => {
 
   const createMockRepository = (): EventsRepository => ({
     create: vi.fn().mockResolvedValue(mockEvent),
+    listRecent: vi.fn().mockResolvedValue([]),
+    aggregateByRoute: vi.fn().mockResolvedValue([]),
   });
 
   describe('valid payload', () => {
