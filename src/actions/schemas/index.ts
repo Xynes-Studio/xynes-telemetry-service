@@ -4,6 +4,14 @@ export {
   type EventIngestResult,
 } from "./event-ingest.schema";
 export {
+  gatewayRequestLogPayloadSchema,
+  gatewayRequestLogResultSchema,
+  gatewayRequestLogGeoSchema,
+  gatewayRequestLogDeviceSchema,
+  type GatewayRequestLogPayload,
+  type GatewayRequestLogResult,
+} from "./gateway-request-log.schema";
+export {
   httpRequestEventSchema,
   httpRequestMetaSchema,
   parseHttpRequestEvent,

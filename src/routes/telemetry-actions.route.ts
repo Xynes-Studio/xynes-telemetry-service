@@ -19,6 +19,7 @@ const actionRequestSchema = z.object({
     // Ingest actions
     "telemetry.event.ingest",
     "telemetry.events.ingest",
+    "telemetry.gateway.logs.ingest",
     // TELE-VIEW-1: Query actions (requires telemetry.events.view permission via gateway)
     "telemetry.events.listRecentForWorkspace",
     "telemetry.stats.summaryByRoute",

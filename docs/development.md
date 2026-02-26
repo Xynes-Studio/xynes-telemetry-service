@@ -53,6 +53,7 @@ registerTelemetryAction('my.action', myHandler);
 |------------|------|-------------|
 | `telemetry.event.ingest` | Write | Legacy ingest action |
 | `telemetry.events.ingest` | Write | Canonical ingest action (TELE-GW-1) |
+| `telemetry.gateway.logs.ingest` | Write | Canonical gateway access log ingest (GATEWAY-AUDIT-1) |
 | `telemetry.events.listRecentForWorkspace` | Read | List recent events (TELE-VIEW-1) |
 | `telemetry.stats.summaryByRoute` | Read | Aggregated route stats (TELE-VIEW-1) |
 
@@ -72,6 +73,12 @@ Run tests:
 bun test
 bun test:coverage
 ```
+
+TDD workflow is mandatory for backend changes:
+1. Add/adjust failing test.
+2. Implement minimal change to pass.
+3. Refactor while keeping tests green.
+4. Run full lint + test + coverage before completion.
 
 ## Code Style
 
@@ -96,6 +103,28 @@ All external inputs must be validated:
 - Return generic messages (e.g., `db_unavailable`) for infrastructure failures
 
 See [ADR-002: Security Hardening](./adr/002-security-hardening.md) for rationale.
+
+## Gateway Access Logs (GATEWAY-AUDIT-1)
+
+Telemetry service now accepts canonical gateway access logs through `telemetry.gateway.logs.ingest`.
+
+### Storage
+
+- Table: `telemetry.gateway_request_logs`
+- Query View: `telemetry.v_gateway_request_logs`
+- Repository: `src/repositories/gatewayRequestLogs.repository.ts`
+
+### Retention
+
+- Daily prune job runs in-process with advisory lock protection.
+- Default retention: **180 days** (`TELEMETRY_GATEWAY_LOG_RETENTION_DAYS=180`).
+- Scheduler interval override: `TELEMETRY_RETENTION_RUN_INTERVAL_MS`.
+
+### Privacy
+
+- Raw IP values must never be stored.
+- `clientIpHash` is required to be hash-shaped.
+- Snippets are validated against raw-IP and sensitive-token leakage patterns.
 
 ## Authorization
 
@@ -128,4 +157,3 @@ This returns a `403 Forbidden` response with the specified error code.
 ## Adding New Dependencies
 
 Use `bun add` or `bun add -d` for dev dependencies.
-

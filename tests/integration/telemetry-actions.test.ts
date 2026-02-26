@@ -6,6 +6,7 @@ import {
   registerTelemetryAction,
 } from "../../src/actions/registry";
 import { createEventIngestHandler } from "../../src/actions/handlers/event-ingest.handler";
+import { createGatewayRequestLogIngestHandler } from "../../src/actions/handlers/gateway-request-log-ingest.handler";
 import { createEventsListHandler } from "../../src/actions/handlers/events-list.handler";
 import { createStatsSummaryHandler } from "../../src/actions/handlers/stats-summary.handler";
 import type { Event } from "../../src/db/schema";
@@ -370,6 +371,76 @@ describe("Telemetry Actions Endpoint", () => {
 
       // Should still succeed - sanitization happens server-side
       expect(res.status).toBe(201);
+    });
+  });
+
+  describe("telemetry.gateway.logs.ingest action (GATEWAY-AUDIT-1)", () => {
+    beforeEach(() => {
+      clearRegistry();
+      const mockRepo = {
+        create: vi.fn().mockResolvedValue({
+          id: "550e8400-e29b-41d4-a716-446655440000",
+          requestId: "req_abc_123",
+          method: "GET",
+          path: "/health",
+          pathPattern: null,
+          routeId: null,
+          serviceKey: null,
+          actionKey: null,
+          statusCode: 200,
+          durationMs: 11,
+          workspaceId: null,
+          userId: null,
+          clientIpHash: null,
+          geoCountry: null,
+          geoRegion: null,
+          geoCity: null,
+          geoSource: null,
+          deviceType: null,
+          deviceBrowser: null,
+          deviceOs: null,
+          userAgent: null,
+          errorCode: null,
+          requestSnippet: null,
+          responseSnippet: null,
+          requestSizeBytes: null,
+          responseSizeBytes: null,
+          occurredAt: new Date(),
+          createdAt: new Date(),
+        }),
+        deleteOlderThan: vi.fn().mockResolvedValue(0),
+      };
+      const handler = createGatewayRequestLogIngestHandler(mockRepo);
+      registerTelemetryAction("telemetry.gateway.logs.ingest", handler);
+    });
+
+    it("accepts canonical gateway log payload", async () => {
+      const res = await app.request("/internal/telemetry-actions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
+        },
+        body: JSON.stringify({
+          actionKey: "telemetry.gateway.logs.ingest",
+          payload: {
+            requestId: "req_abc_123",
+            timestamp: new Date().toISOString(),
+            method: "GET",
+            path: "/health",
+            statusCode: 200,
+            durationMs: 11,
+            clientIpHash: "ab12cd34ef56ab12",
+            device: { type: "desktop", browser: "Chrome", os: "Mac OS" },
+            geo: { country: "US", source: "cf" },
+          },
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.ok).toBe(true);
+      expect(body.data).toHaveProperty("id");
     });
   });
 

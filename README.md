@@ -5,6 +5,7 @@ A telemetry service for ingesting generic events from all apps (UI, backend, per
 ## Features
 
 - **Event Ingestion**: Generic event collection from multiple sources (web, mobile, backend, CLI)
+- **Gateway Audit Log Ingestion**: Canonical structured gateway access logs (`telemetry.gateway.logs.ingest`)
 - **Action-Based API**: Simple, consistent action pattern for all operations
 - **Extensible Schema**: JSONB metadata field for arbitrary event properties
 - **Context-Aware**: Workspace and user scoping for multi-tenant support
@@ -31,6 +32,7 @@ src/
 │   ├── migrations/   # SQL migrations
 │   └── client.ts     # Database client
 ├── repositories/     # Data access layer
+├── retention/        # Scheduled retention jobs (advisory-lock protected)
 ├── routes/           # HTTP route definitions
 ├── middleware/       # Request/response middleware
 ├── errors/           # Custom error classes
@@ -76,6 +78,8 @@ DATABASE_URL="postgresql://user:password@localhost:5432/database"
 PORT=3000
 NODE_ENV=development
 INTERNAL_SERVICE_TOKEN=change-me-to-a-long-random-secret
+TELEMETRY_GATEWAY_LOG_RETENTION_DAYS=180
+TELEMETRY_RETENTION_RUN_INTERVAL_MS=86400000
 ```
 
 ### Database Setup
@@ -244,6 +248,21 @@ Canonical action key for gateway HTTP request telemetry events. This is the pref
 - `path` must not contain query strings (blocked by schema validation)
 - `clientIpHash` should be a one-way hash, not the raw IP
 - `meta.userAgent` is limited to 256 characters
+
+#### telemetry.gateway.logs.ingest (GATEWAY-AUDIT-1)
+
+Canonical gateway access-log action used by `xynes-gateway` middleware/dispatcher.
+
+**Storage target:**
+- `telemetry.gateway_request_logs` table
+- `telemetry.v_gateway_request_logs` view
+
+**Payload highlights:**
+- requestId, method, path, pathPattern, route/service/action metadata
+- statusCode, durationMs, workspace/user context
+- hashed client IP (`clientIpHash`) only
+- coarse geo/device fields
+- redacted request/response snippets with size metadata
 
 ## Event Schema
 

@@ -1,6 +1,7 @@
 export type TelemetryActionKey =
   | "telemetry.event.ingest" // Legacy action key
   | "telemetry.events.ingest" // TELE-GW-1: New canonical action key
+  | "telemetry.gateway.logs.ingest" // GATEWAY-AUDIT-1: Canonical gateway log ingest
   | "telemetry.events.listRecentForWorkspace" // TELE-VIEW-1: List recent events
   | "telemetry.stats.summaryByRoute"; // TELE-VIEW-1: Aggregated stats
 
