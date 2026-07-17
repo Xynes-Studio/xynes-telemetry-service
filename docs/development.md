@@ -154,6 +154,54 @@ This returns a `403 Forbidden` response with the specified error code.
 2. Generate migration: `bun run db:generate`
 3. Apply migration: `bun run db:migrate`
 
+## Health Endpoint (H-6)
+
+`GET /health` follows the platform
+[`HEALTHCHECK-CONTRACT.md`](../../xynes-infra/infra/release/HEALTHCHECK-CONTRACT.md)
+and returns:
+
+```json
+{
+  "ok": true,
+  "service": "xynes-telemetry-service",
+  "version": "sha-abcdef0",
+  "uptime_seconds": 42,
+  "checks": { "db": "ok" }
+}
+```
+
+- `XYNES_BUILD_VERSION` supplies the image version and defaults to `dev`.
+- The read-only PostgreSQL probe has a one-second timeout and caches failures for
+  30 seconds to prevent retry storms.
+- A DB failure returns HTTP 503 with the same response shape and no internal
+  error details.
+- Exact `/health` and `/ready` requests are excluded from access logs.
+
+## Production Dockerfile (H-6)
+
+The service-local Dockerfile exposes `base`, `dev`, and `prod` targets. The
+production target:
+
+- uses the shared digest-pinned `oven/bun:1-alpine` H-series base;
+- runs as non-root `xynes` (UID/GID 1001);
+- installs production dependencies while omitting development and peer tooling;
+- includes `src/db/migrations/` and its metadata through the production `src/`
+  copy;
+- exposes port `4400` and runs `src/index.ts` through Bun;
+- uses `bun run healthcheck` for the Docker `HEALTHCHECK`.
+
+Build and inspect it locally:
+
+```bash
+docker buildx build --target prod \
+  -t xynesplatform/xynes-telemetry-service:h6-test --load .
+docker image inspect xynesplatform/xynes-telemetry-service:h6-test \
+  --format '{{.Config.User}} {{json .Config.Healthcheck}}'
+```
+
+Temporary Trivy findings and reachability audits are documented in
+`CVE-WAIVERS.md`. Re-run that audit before every production release.
+
 ## Adding New Dependencies
 
 Use `bun add` or `bun add -d` for dev dependencies.

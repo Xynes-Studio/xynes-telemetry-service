@@ -1,6 +1,15 @@
-import type { Context, Next } from 'hono';
+import type { Context, Next } from "hono";
 
-export async function loggerMiddleware(c: Context, next: Next): Promise<void | Response> {
+const ACCESS_LOG_SKIP_PATHS = new Set(["/health", "/ready"]);
+
+export async function loggerMiddleware(
+  c: Context,
+  next: Next,
+): Promise<void | Response> {
+  if (ACCESS_LOG_SKIP_PATHS.has(c.req.path)) {
+    return next();
+  }
+
   const start = Date.now();
   const method = c.req.method;
   const path = c.req.path;

@@ -75,7 +75,7 @@ Environment variables:
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/database"
-PORT=3000
+PORT=4400
 NODE_ENV=development
 INTERNAL_SERVICE_TOKEN=change-me-to-a-long-random-secret
 TELEMETRY_GATEWAY_LOG_RETENTION_DAYS=180
@@ -129,10 +129,20 @@ GET /health
 **Response**
 ```json
 {
-  "status": "ok",
-  "service": "xynes-telemetry-service"
+  "ok": true,
+  "service": "xynes-telemetry-service",
+  "version": "sha-abcdef0",
+  "uptime_seconds": 42,
+  "checks": {
+    "db": "ok"
+  }
 }
 ```
+
+The endpoint is unauthenticated for Docker and infrastructure probes. Database
+probe failure returns the same JSON shape with HTTP 503 and `checks.db = "fail"`.
+Set `XYNES_BUILD_VERSION` to the image tag or commit identifier; it defaults to
+`dev`.
 
 ### Readiness Check
 
