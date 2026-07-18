@@ -76,7 +76,7 @@ describe("checkPostgresReadiness", () => {
     };
 
     await expect(checkPostgresReadiness(options)).rejects.toThrow(
-      "Connection refused"
+      "Connection refused",
     );
 
     expect(mockEnd).toHaveBeenCalledWith({ timeout: 2 });
