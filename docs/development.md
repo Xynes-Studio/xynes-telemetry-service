@@ -173,6 +173,8 @@ and returns:
 - `XYNES_BUILD_VERSION` supplies the image version and defaults to `dev`.
 - The read-only PostgreSQL probe has a one-second timeout and caches failures for
   30 seconds to prevent retry storms.
+- A reachable database without the required `telemetry` schema is degraded; the
+  endpoint returns HTTP 503 instead of marking an unmigrated database healthy.
 - A DB failure returns HTTP 503 with the same response shape and no internal
   error details.
 - Exact `/health` and `/ready` requests are excluded from access logs.

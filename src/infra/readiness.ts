@@ -19,7 +19,10 @@ export async function checkPostgresReadiness({
 
   try {
     if (schemaName) {
-      await sql`SELECT 1 FROM pg_namespace WHERE nspname = ${schemaName}`;
+      const schemas = await sql`SELECT 1 FROM pg_namespace WHERE nspname = ${schemaName}`;
+      if (schemas.length === 0) {
+        throw new Error('Required database schema is unavailable');
+      }
     } else {
       await sql`SELECT 1`;
     }
