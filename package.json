@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run src/index.ts'",
     "start": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run src/index.ts'",
+    "healthcheck": "bun -e 'const r=await fetch(`http://127.0.0.1:${process.env.PORT||4400}/health`);process.exit(r.ok?0:1)'",
     "test": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run vitest run'",
     "test:watch": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run vitest'",
     "test:coverage": "sh -c 'bun --env-file=\"${XYNES_ENV_FILE:-.env.dev}\" run vitest run --coverage'",

@@ -53,6 +53,21 @@ describe("checkPostgresReadiness", () => {
     expect(mockEnd).toHaveBeenCalledWith({ timeout: 2 });
   });
 
+  it("should fail when the requested schema is absent", async () => {
+    mockSql.mockResolvedValueOnce([]);
+
+    const options: PostgresReadinessCheckOptions = {
+      databaseUrl: "postgres://test:test@localhost:5432/test",
+      schemaName: "telemetry",
+    };
+
+    await expect(checkPostgresReadiness(options)).rejects.toThrow(
+      "Required database schema is unavailable",
+    );
+
+    expect(mockEnd).toHaveBeenCalledWith({ timeout: 2 });
+  });
+
   it("should still call end even if query fails", async () => {
     mockSql.mockRejectedValueOnce(new Error("Connection refused"));
 
@@ -61,7 +76,7 @@ describe("checkPostgresReadiness", () => {
     };
 
     await expect(checkPostgresReadiness(options)).rejects.toThrow(
-      "Connection refused"
+      "Connection refused",
     );
 
     expect(mockEnd).toHaveBeenCalledWith({ timeout: 2 });

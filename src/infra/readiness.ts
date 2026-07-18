@@ -1,4 +1,4 @@
-import postgres from 'postgres';
+import postgres from "postgres";
 
 export interface PostgresReadinessCheckOptions {
   databaseUrl: string;
@@ -19,7 +19,11 @@ export async function checkPostgresReadiness({
 
   try {
     if (schemaName) {
-      await sql`SELECT 1 FROM pg_namespace WHERE nspname = ${schemaName}`;
+      const schemas =
+        await sql`SELECT 1 FROM pg_namespace WHERE nspname = ${schemaName}`;
+      if (schemas.length === 0) {
+        throw new Error("Required database schema is unavailable");
+      }
     } else {
       await sql`SELECT 1`;
     }
@@ -27,4 +31,3 @@ export async function checkPostgresReadiness({
     await sql.end({ timeout: 2 }).catch(() => undefined);
   }
 }
-
