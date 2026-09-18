@@ -16,9 +16,9 @@
     "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.4.2",
     "@vitest/coverage-v8": "^4.0.15",
-    "drizzle-kit": "^0.31.8",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.0.0",
     "vitest": "^4.0.15"
   },
@@ -26,9 +26,9 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.1",
-    "hono": "^4.10.8",
-    "postgres": "^3.4.7",
-    "zod": "^4.1.13"
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.8",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.5"
   }
 }
