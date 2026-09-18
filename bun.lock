@@ -12,10 +12,10 @@
       },
       "devDependencies": {
         "@types/bun": "^1.4.2",
-        "@vitest/coverage-v8": "4.0.15",
+        "@vitest/coverage-v8": "^4.0.15",
         "drizzle-kit": "^0.31.10",
         "typescript": "^5.0.0",
-        "vitest": "4.0.15",
+        "vitest": "^4.0.15",
       },
       "peerDependencies": {
         "typescript": "^5",
