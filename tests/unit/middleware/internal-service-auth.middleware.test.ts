@@ -1,3 +1,4 @@
+import { signedInit } from "../../support/internal-request";
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { internalServiceAuthMiddleware } from '../../../src/middleware/internal-service-auth.middleware';
@@ -50,7 +51,7 @@ describe('internalServiceAuthMiddleware (unit)', () => {
     expect(ran).toBe(false);
   });
 
-  it('allows request when header matches', async () => {
+  it('allows a bound gateway request', async () => {
     const app = new Hono();
     let ran = false;
     app.use('/internal/*', internalServiceAuthMiddleware);
@@ -59,14 +60,14 @@ describe('internalServiceAuthMiddleware (unit)', () => {
       return c.json({ ok: true });
     });
 
-    const res = await app.request('/internal/telemetry-actions', {
+    const res = await app.request('/internal/telemetry-actions', signedInit('/internal/telemetry-actions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Internal-Service-Token': token,
       },
-      body: JSON.stringify({}),
-    });
+      body: JSON.stringify({ actionKey: 'telemetry.events.ingest', payload: {} }),
+    }));
 
     expect(res.status).toBe(200);
     expect(ran).toBe(true);
