@@ -1,3 +1,4 @@
+import { signedInit } from '../support/internal-request';
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { app } from "../../src/app";
 import * as eventsRepository from "../../src/repositories/events.repository";
@@ -49,7 +50,7 @@ describe("Telemetry Actions Endpoint", () => {
   describe("POST /internal/telemetry-actions", () => {
     describe("telemetry.event.ingest action", () => {
       it("should return 201 with success response for valid payload", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -68,7 +69,7 @@ describe("Telemetry Actions Endpoint", () => {
               metadata: { key: "value" },
             },
           }),
-        });
+        }));
 
         expect(res.status).toBe(201);
 
@@ -79,7 +80,7 @@ describe("Telemetry Actions Endpoint", () => {
       });
 
       it("should return 201 with minimal payload", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -93,7 +94,7 @@ describe("Telemetry Actions Endpoint", () => {
               name: "response.time",
             },
           }),
-        });
+        }));
 
         expect(res.status).toBe(201);
 
@@ -102,7 +103,7 @@ describe("Telemetry Actions Endpoint", () => {
       });
 
       it("should work without workspace and user headers", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -116,7 +117,7 @@ describe("Telemetry Actions Endpoint", () => {
               name: "script.executed",
             },
           }),
-        });
+        }));
 
         expect(res.status).toBe(201);
       });
@@ -124,7 +125,7 @@ describe("Telemetry Actions Endpoint", () => {
 
     describe("validation errors", () => {
       it("should return 400 for missing required payload fields", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -137,7 +138,7 @@ describe("Telemetry Actions Endpoint", () => {
               // missing eventType and name
             },
           }),
-        });
+        }));
 
         expect(res.status).toBe(400);
 
@@ -147,7 +148,7 @@ describe("Telemetry Actions Endpoint", () => {
       });
 
       it("should return 400 for empty source", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -161,7 +162,7 @@ describe("Telemetry Actions Endpoint", () => {
               name: "test.event",
             },
           }),
-        });
+        }));
 
         expect(res.status).toBe(400);
 
@@ -170,8 +171,8 @@ describe("Telemetry Actions Endpoint", () => {
         expect(body.error.code).toBe("VALIDATION_ERROR");
       });
 
-      it("should return 400 for invalid actionKey", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+      it("denies an unregistered actionKey", async () => {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -181,17 +182,17 @@ describe("Telemetry Actions Endpoint", () => {
             actionKey: "invalid.action",
             payload: {},
           }),
-        });
+        }));
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(403);
 
         const body = (await res.json()) as any;
         expect(body.ok).toBe(false);
-        expect(body.error.code).toBe("VALIDATION_ERROR");
+        expect(body.error.code).toBe("FORBIDDEN");
       });
 
-      it("should return 400 for missing actionKey", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+      it("denies a missing operation", async () => {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -200,15 +201,15 @@ describe("Telemetry Actions Endpoint", () => {
           body: JSON.stringify({
             payload: { source: "web", eventType: "test", name: "test" },
           }),
-        });
+        }));
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(403);
       });
     });
 
     describe("unknown action", () => {
-      it("should return 400 for unknown action key via validation", async () => {
-        const res = await app.request("/internal/telemetry-actions", {
+      it("denies an unknown action before validation", async () => {
+        const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -218,9 +219,9 @@ describe("Telemetry Actions Endpoint", () => {
             actionKey: "unknown.action.key",
             payload: {},
           }),
-        });
+        }));
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(403);
       });
     });
   });
@@ -273,7 +274,7 @@ describe("Telemetry Actions Endpoint", () => {
   // TELE-GW-1: New canonical action key tests
   describe("telemetry.events.ingest action (TELE-GW-1)", () => {
     it("should accept telemetry.events.ingest action key", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -299,7 +300,7 @@ describe("Telemetry Actions Endpoint", () => {
             },
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(201);
       const body = (await res.json()) as any;
@@ -308,7 +309,7 @@ describe("Telemetry Actions Endpoint", () => {
     });
 
     it("should work with http_request gateway events", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -342,13 +343,13 @@ describe("Telemetry Actions Endpoint", () => {
             },
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(201);
     });
 
     it("should sanitize query strings in targetId", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -367,7 +368,7 @@ describe("Telemetry Actions Endpoint", () => {
             },
           },
         }),
-      });
+      }));
 
       // Should still succeed - sanitization happens server-side
       expect(res.status).toBe(201);
@@ -415,7 +416,7 @@ describe("Telemetry Actions Endpoint", () => {
     });
 
     it("accepts canonical gateway log payload", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -435,7 +436,7 @@ describe("Telemetry Actions Endpoint", () => {
             geo: { country: "US", source: "cf" },
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(201);
       const body = (await res.json()) as any;
@@ -481,7 +482,7 @@ describe("Telemetry Actions Endpoint", () => {
     });
 
     it("should return 200 with events list for valid request", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -495,7 +496,7 @@ describe("Telemetry Actions Endpoint", () => {
             limit: 10,
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(200);
       const body = (await res.json()) as any;
@@ -505,10 +506,11 @@ describe("Telemetry Actions Endpoint", () => {
     });
 
     it("should return 400 for invalid workspaceId", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Workspace-Id": "not-a-valid-uuid",
           "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
         },
         body: JSON.stringify({
@@ -517,7 +519,7 @@ describe("Telemetry Actions Endpoint", () => {
             workspaceId: "not-a-valid-uuid",
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(400);
       const body = (await res.json()) as any;
@@ -555,7 +557,7 @@ describe("Telemetry Actions Endpoint", () => {
     });
 
     it("should return 200 with stats summary for valid request", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -569,7 +571,7 @@ describe("Telemetry Actions Endpoint", () => {
             timeWindowHours: 24,
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(200);
       const body = (await res.json()) as any;
@@ -581,10 +583,11 @@ describe("Telemetry Actions Endpoint", () => {
     });
 
     it("should return 400 for invalid timeWindowHours", async () => {
-      const res = await app.request("/internal/telemetry-actions", {
+      const res = await app.request("/internal/telemetry-actions", signedInit("/internal/telemetry-actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Workspace-Id": "550e8400-e29b-41d4-a716-446655440000",
           "X-Internal-Service-Token": INTERNAL_SERVICE_TOKEN,
         },
         body: JSON.stringify({
@@ -594,7 +597,7 @@ describe("Telemetry Actions Endpoint", () => {
             timeWindowHours: 500, // Exceeds MAX_TIME_WINDOW_HOURS
           },
         }),
-      });
+      }));
 
       expect(res.status).toBe(400);
       const body = (await res.json()) as any;

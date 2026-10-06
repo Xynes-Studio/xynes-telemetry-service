@@ -77,7 +77,7 @@ Environment variables:
 DATABASE_URL="postgresql://user:password@localhost:5432/database"
 PORT=4400
 NODE_ENV=development
-INTERNAL_SERVICE_TOKEN=change-me-to-a-long-random-secret
+INTERNAL_REQUEST_TRUST_FILE=/run/secrets/internal-request-trust.json
 TELEMETRY_GATEWAY_LOG_RETENTION_DAYS=180
 TELEMETRY_RETENTION_RUN_INTERVAL_MS=86400000
 ```
@@ -295,3 +295,14 @@ See the following ADRs for architectural decisions:
 ## License
 
 Proprietary - Xynes
+
+## SEC-003-FU-1 current internal authentication
+
+Internal actions now require Ed25519 requests bound to receiver, operation, exact
+body, actor, workspace and request id. Historical shared-token/hybrid instructions
+in this document no longer apply to authentication. Receivers fail closed without
+public trust; callers load only their own signing file. Shared static/HS256 tokens
+are rejected, including authz read checks. Follow the backend infra identity
+runbook for coordinated seven-service rollout and rotation. Protocol mirrors are
+generated from platform-contracts and must be changed/exported there; validate
+`corepack pnpm internal-request:check` with the backend workspace present.
